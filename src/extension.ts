@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
-
 	console.log('VSLab activate!');
 
 	context.subscriptions.push(vscode.workspace.onDidSaveTextDocument((doc) => {
 		if (doc.isUntitled)
 			return;
 
-		if (doc.fileName.includes('Client\\Assets\\Res\\Config\\Language_')) {
+		const fileName = doc.fileName.replace(/\\/gm, '/');
+		if (fileName.includes('Client/Assets/Res/Config/Language_')) {
 			let strArr = [];
 
 			strArr.push('namespace GameLogic.XlsConfig.LocizationStrings');
@@ -44,7 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
 			strArr.push('}');
 
 			const u8Str = Buffer.from(strArr.join('\n'), 'utf8');
-			let csFile = doc.fileName.substr(0, doc.fileName.lastIndexOf('\\')) + '/../../Scripts/GameLogic/GameDataManager/Config/LocalizationStrings.cs';
+			const csFile = fileName.substr(0, fileName.lastIndexOf('/')) + '/../../Scripts/GameLogic/GameDataManager/Config/LocalizationStrings.cs';
 			vscode.workspace.fs.writeFile(vscode.Uri.file(csFile), u8Str).then(() => {
 				vscode.window.showInformationMessage(`导出成功`);
 			});
