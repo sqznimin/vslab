@@ -1,7 +1,7 @@
 {
 	"name": "vslab",
 	"displayName": "vslab",
-	"description": "暂时只有导出多语言CS功能",
+	"description": "For own project",
 	"publisher": "sqz",
 	"version": "0.0.1",
 	"engines": {
@@ -20,7 +20,23 @@
 				"command": "vslab.version",
 				"title": "VSLab Version"
 			}
-		]
+		],
+		"configuration": {
+			"type": "object",
+			"title": "VSLab Configuration",
+			"properties": {
+				"vslab.localization.formatOnSave": {
+					"type": "boolean",
+					"default": false,
+					"description": "Auto format on save"
+				},
+				"vslab.localization.exportCSOnSave": {
+					"type": "boolean",
+					"default": true,
+					"description": "Auto export c# on save"
+				}
+			}
+		}
 	},
 	"devDependencies": {
 		"@types/vscode": "^1.52.0",
