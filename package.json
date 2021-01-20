@@ -3,7 +3,7 @@
 	"displayName": "vslab",
 	"description": "For own project",
 	"publisher": "sqz",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"engines": {
 		"vscode": "^1.52.0"
 	},
@@ -36,7 +36,19 @@
 					"description": "Auto export c# on save"
 				}
 			}
-		}
+		},
+		"keybindings": [
+			{
+				"key": "alt+e",
+				"command": "cursorEnd",
+				"when": "textInputFocus"
+			},
+			{
+				"key": "alt+h",
+				"command": "cursorHome",
+				"when": "textInputFocus"
+			}
+		]
 	},
 	"devDependencies": {
 		"@types/vscode": "^1.52.0",

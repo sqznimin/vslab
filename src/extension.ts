@@ -59,6 +59,12 @@ export function activate(context: vscode.ExtensionContext) {
 					let k = sorted[i];
 					fmtStrArr.push(`${k.padEnd(maxLen, ' ')}=${tbl[k]}`);
 				}
+
+				fmtStrArr.push('');
+				fmtStrArr.push('');
+				fmtStrArr.push('');
+				fmtStrArr.push('');
+
 				for (let i = breakLineNo; i < doc.lineCount; ++i) {
 					let line = doc.lineAt(i);
 					fmtStrArr.push(line.text);
