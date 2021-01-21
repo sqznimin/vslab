@@ -1,0 +1,9 @@
+usings:
+  - GameLogic.Event.Subscribe
+  - System.Collections.Generic
+
+events:
+  - Home:
+      - didNewMyHomeData
+  - Role:
+      - willUpdateData<int>
