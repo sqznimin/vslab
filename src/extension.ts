@@ -137,9 +137,9 @@ function onDidSaveEventsDefine(doc: vscode.TextDocument, fileName: string) {
 	sb.push('}');
 
 	const u8Str = Buffer.from(sb.join('\n'), 'utf8');
-	const csFile = fileName.substr(0, fileName.lastIndexOf('/')) + '/Events/Global_Events.cs';
+	const csFile = fileName.substr(0, fileName.lastIndexOf('/')) + '/../../Assets/Scripts/GameLogic/Event/GlobalEvents.cs';
 	vscode.workspace.fs.writeFile(vscode.Uri.file(csFile), u8Str).then(() => {
-		vscode.window.showInformationMessage(`Export "Events.cs" done!`);
+		vscode.window.showInformationMessage(`Export "GlobalEvents.cs" done!`);
 	});
 }
 
@@ -151,10 +151,10 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 
 		const fileName = doc.fileName.replace(/\\/gm, '/');
-		if (fileName.includes('Client/Assets/Res/Config/Language_')) {
+		if (fileName.includes('Assets/Res/Config/Language_')) {
 			onDidSaveLanguage(doc, fileName);
 		}
-		else if (fileName.includes('events_define')) {
+		else if (fileName.includes('event_define')) {
 			onDidSaveEventsDefine(doc, fileName)
 		}
 	}));
