@@ -19,6 +19,10 @@
 			{
 				"command": "vslab.version",
 				"title": "VSLab Version"
+			},
+			{
+				"command": "vslab.runBatch",
+				"title": "VSLab Run Batch"
 			}
 		],
 		"configuration": {

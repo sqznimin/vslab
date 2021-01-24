@@ -162,6 +162,11 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('vslab.version', () => {
 		vscode.window.showInformationMessage(`VSLab Version:${vscode.extensions.getExtension('sqz.vslab')?.packageJSON.version}`);
 	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('vslab.runBatch', () => {
+		let terminal = vscode.window.activeTerminal;
+		terminal?.sendText('start E:/test.bat');
+	}));
 }
 
 export function deactivate() { }
