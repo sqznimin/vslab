@@ -3,7 +3,7 @@
 	"displayName": "vslab",
 	"description": "For own Unity3D project",
 	"publisher": "sqz",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"engines": {
 		"vscode": "^1.52.0"
 	},
@@ -21,8 +21,8 @@
 				"title": "VSLab Version"
 			},
 			{
-				"command": "vslab.runBatch",
-				"title": "VSLab Run Batch"
+				"command": "vslab.runUIDuplicateCheck",
+				"title": "VSLab Check UI Image Duplicate"
 			}
 		],
 		"configuration": {
@@ -40,6 +40,15 @@
 					"description": "Auto export c# on save"
 				}
 			}
+		},
+		"menus": {
+			"explorer/context": [
+				{
+					"command": "vslab.runUIDuplicateCheck",
+					"group": "runCommand",
+					"when": "explorerResourceIsFolder"
+				}
+			]
 		},
 		"keybindings": [
 			{

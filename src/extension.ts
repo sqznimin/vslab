@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as yaml from 'js-yaml';
 
+let terminal: vscode.Terminal;
+
 function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
 	let tbl: { [key: string]: string; } = {};
 	let breakLineNo = -1;
@@ -71,7 +73,7 @@ function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
 
 	if (conf.get('vslab.localization.exportCSOnSave')) {
 		let csStrArr: string[] = [];
-		csStrArr.push('namespace GameLogic.XlsConfig.LocizationStrings');
+		csStrArr.push('namespace GameLogic.Localization');
 		csStrArr.push('{');
 		csStrArr.push('    public static class LS');
 		csStrArr.push('    {');
@@ -146,7 +148,9 @@ function onDidSaveEventsDefine(doc: vscode.TextDocument, fileName: string) {
 export function activate(context: vscode.ExtensionContext) {
 	console.log('VSLab activate!');
 
-	context.subscriptions.push(vscode.workspace.onDidSaveTextDocument((doc) => {
+	terminal = vscode.window.createTerminal('VSLab');
+
+	context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(doc => {
 		if (doc.isUntitled)
 			return;
 
@@ -163,10 +167,22 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage(`VSLab Version:${vscode.extensions.getExtension('sqz.vslab')?.packageJSON.version}`);
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand('vslab.runBatch', () => {
-		let terminal = vscode.window.activeTerminal;
-		terminal?.sendText('start E:/test.bat');
+	context.subscriptions.push(vscode.commands.registerCommand('vslab.runUIDuplicateCheck', (uri: vscode.Uri) => {
+		const path = uri.fsPath.replace(/\\/gm, '/') + '/';
+		if (!path.includes('Assets/Res/UI'))
+			return;
+
+		const rootPath = path.substr(0, path.indexOf('Assets/Res/UI')) + 'Assets/Res/UI/';
+		const toolPath = rootPath.replace('Assets/Res/UI/', 'Misc/tools/ui_duplicate_check/');
+		const exePath = toolPath + 'check.exe';
+		terminal?.sendText(`start ${exePath} ${rootPath}-${path}`);
+
+		vscode.workspace.openTextDocument(toolPath + 'result.txt').then(doc => {
+			vscode.window.showTextDocument(doc);
+		});
 	}));
 }
 
-export function deactivate() { }
+export function deactivate() {
+	terminal?.dispose();
+}
