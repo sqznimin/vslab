@@ -113,7 +113,7 @@ function onDidSaveEventsDefine(doc: vscode.TextDocument, fileName: string) {
 	const modules = json.events;
 	for (let i = 0; i < modules.length; ++i) {
 		for (let k in modules[i]) {
-			const events: string[] = modules[i][k];
+			const events = modules[i][k];
 			if (events.length === 0)
 				break;
 
@@ -121,14 +121,18 @@ function onDidSaveEventsDefine(doc: vscode.TextDocument, fileName: string) {
 			sb.push(`        public static class ${k}`);
 			sb.push('        {');
 			for (let j = 0; j < events.length; ++j) {
-				let s = events[j].trim();
-				let t = '';
-				let idx = s.indexOf('<');
+				let name: string = events[j].name.trim();
+				let targs: string = '';
+				let comment: string = events[j].desc ?? '';
+				let idx = name.indexOf('<');
 				if (idx != -1) {
-					t = s.substr(idx);
-					s = s.substr(0, idx);
+					targs = name.substr(idx);
+					name = name.substr(0, idx);
 				}
-				sb.push(`            public static readonly EventEmitter${t} ${s} = events.Reg(new EventEmitter${t}());`);
+				if (comment != '') {
+					comment = ` //${comment}`;
+				}
+				sb.push(`            public static readonly EventEmitter${targs} ${name} = events.Reg(new EventEmitter${targs}());${comment}`);
 			}
 			sb.push('        }');
 			break;
