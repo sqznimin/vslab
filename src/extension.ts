@@ -114,25 +114,34 @@ function onDidSaveEventsDefine(doc: vscode.TextDocument, fileName: string) {
 	for (let i = 0; i < modules.length; ++i) {
 		for (let k in modules[i]) {
 			const events = modules[i][k];
-			if (events.length === 0)
+			if ((events?.length ?? 0) == 0)
 				break;
 
 			sb.push('');
 			sb.push(`        public static class ${k}`);
 			sb.push('        {');
 			for (let j = 0; j < events.length; ++j) {
-				let name: string = events[j].name.trim();
-				let targs: string = '';
-				let comment: string = events[j].desc ?? '';
-				let idx = name.indexOf('<');
-				if (idx != -1) {
-					targs = name.substr(idx);
-					name = name.substr(0, idx);
+				try {
+					let name: string = events[j].name.trim();
+					let targs: string = '';
+					let comment: string = events[j].desc ?? '';
+					let idx = name.indexOf('<');
+					if (idx != -1) {
+						targs = name.substr(idx);
+						name = name.substr(0, idx);
+					}
+					if (comment != '') {
+						sb.push('            /// <summary>');
+						sb.push(`            /// ${comment}`);
+						sb.push('            /// </summary>');
+					}
+					sb.push(`            public static readonly EventEmitter${targs} ${name} = events.Reg(new EventEmitter${targs}());`);
 				}
-				if (comment != '') {
-					comment = ` //${comment}`;
+				catch
+				{
+					vscode.window.showErrorMessage(`Export "GlobalEvents.cs" error, at event class: ${k}.`);
+					return;
 				}
-				sb.push(`            public static readonly EventEmitter${targs} ${name} = events.Reg(new EventEmitter${targs}());${comment}`);
 			}
 			sb.push('        }');
 			break;

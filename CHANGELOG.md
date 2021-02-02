@@ -1,9 +1,4 @@
 # Change Log
 
-All notable changes to the "vslab" extension will be documented in this file.
-
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+## 0.0.5
+- Added event_define comments

@@ -3,7 +3,7 @@
 	"displayName": "vslab",
 	"description": "For own Unity3D project",
 	"publisher": "sqz",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"engines": {
 		"vscode": "^1.52.0"
 	},
