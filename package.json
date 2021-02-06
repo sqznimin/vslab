@@ -3,7 +3,7 @@
 	"displayName": "vslab",
 	"description": "For own Unity3D project",
 	"publisher": "sqz",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"engines": {
 		"vscode": "^1.52.0"
 	},
@@ -60,6 +60,18 @@
 				"key": "alt+h",
 				"command": "cursorHome",
 				"when": "textInputFocus"
+			}
+		],
+		"languages": [
+			{
+				"id": "localizationConfig",
+				"extensions": [
+					".bytes"
+				],
+				"filenamePatterns": [
+					"*Language_*.bytes",
+					"*language_*.bytes"
+				]
 			}
 		]
 	},

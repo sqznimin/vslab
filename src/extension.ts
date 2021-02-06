@@ -1,96 +1,8 @@
 import * as vscode from 'vscode';
 import * as yaml from 'js-yaml';
+import * as localization from './localization';
 
 let terminal: vscode.Terminal;
-
-function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
-	let tbl: { [key: string]: string; } = {};
-	let breakLineNo = -1;
-	let err = false;
-	for (let i = 0; i < doc.lineCount; ++i) {
-		let line = doc.lineAt(i);
-		if (line.isEmptyOrWhitespace)
-			continue;
-		let str = line.text;
-		if (str.startsWith('!!!')) {
-			breakLineNo = i;
-			break;
-		}
-
-		let idx = str.indexOf('=');
-		if (idx < 0) {
-			breakLineNo = i;
-			err = true;
-			break;
-		}
-
-		let key = str.substr(0, idx).trim();
-		let value = str.substr(idx + 1);
-		tbl[key] = value;
-	}
-
-	if (err) {
-		vscode.window.showErrorMessage(`There is an error at line${breakLineNo + 1}.`);
-		return;
-	}
-	if (breakLineNo === -1) {
-		vscode.window.showErrorMessage(`There is an error at eof.`);
-		return;
-	}
-
-	const sorted = Object.keys(tbl).sort();
-	const conf = vscode.workspace.getConfiguration();
-
-	if (conf.get('vslab.localization.formatOnSave')) {
-		let fmtStrArr: string[] = [];
-
-		let maxLen = -1;
-		for (let i in sorted) {
-			let k = sorted[i];
-			if (maxLen < k.length)
-				maxLen = k.length;
-		}
-		for (let i in sorted) {
-			let k = sorted[i];
-			fmtStrArr.push(`${k.padEnd(maxLen, ' ')}=${tbl[k]}`);
-		}
-
-		fmtStrArr.push('');
-		fmtStrArr.push('');
-		fmtStrArr.push('');
-		fmtStrArr.push('');
-
-		for (let i = breakLineNo; i < doc.lineCount; ++i) {
-			let line = doc.lineAt(i);
-			fmtStrArr.push(line.text);
-		}
-
-		const u8Str = Buffer.from(fmtStrArr.join('\n'), 'utf8');
-		vscode.workspace.fs.writeFile(vscode.Uri.file(fileName), u8Str).then(() => {
-			vscode.window.showInformationMessage(`Format done!`);
-		});
-	}
-
-	if (conf.get('vslab.localization.exportCSOnSave')) {
-		let csStrArr: string[] = [];
-		csStrArr.push('namespace GameLogic.Localization');
-		csStrArr.push('{');
-		csStrArr.push('    public static class LS');
-		csStrArr.push('    {');
-		for (let i in sorted) {
-			let k = sorted[i];
-			csStrArr.push(`        public const string ${k} = "${tbl[k]}";`);
-		}
-		csStrArr.push('    }');
-		csStrArr.push('}');
-
-		const u8Str = Buffer.from(csStrArr.join('\n'), 'utf8');
-		const csFile = fileName.substr(0, fileName.lastIndexOf('/')) + '/../../Scripts/GameLogic/GameDataManager/Config/LocalizationStrings.cs';
-		vscode.workspace.fs.writeFile(vscode.Uri.file(csFile), u8Str).then(() => {
-			vscode.window.showInformationMessage(`Export "LocalizationStrings.cs" done!`);
-		});
-	}
-}
 
 function onDidSaveEventsDefine(doc: vscode.TextDocument, fileName: string) {
 	const jsonStr = JSON.stringify(yaml.load(doc.getText()));
@@ -169,7 +81,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const fileName = doc.fileName.replace(/\\/gm, '/');
 		if (fileName.includes('Assets/Res/Config/Language_')) {
-			onDidSaveLanguage(doc, fileName);
+			localization.onDidSaveLanguage(doc, fileName);
 		}
 		else if (fileName.includes('event_define')) {
 			onDidSaveEventsDefine(doc, fileName)
@@ -194,6 +106,8 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.window.showTextDocument(doc);
 		});
 	}));
+
+	localization.onActivate(context);
 }
 
 export function deactivate() {
