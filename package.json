@@ -38,6 +38,11 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Auto export c# on save"
+				},
+				"vslab.localization.semanticHighlight": {
+					"type": "boolean",
+					"default": true,
+					"description": "Highlight document content"
 				}
 			}
 		},

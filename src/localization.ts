@@ -1,9 +1,5 @@
 import * as vscode from 'vscode';
 
-// "editor.semanticTokenColorCustomizations": {
-//     "enabled": true
-// }
-
 const tokenTypes = new Map<string, number>();
 const tokenModifiers = new Map<string, number>();
 
@@ -11,13 +7,14 @@ const legend = (function () {
     const tokenTypesLegend = [
         'comment', 'string', 'keyword', 'number', 'regexp', 'operator', 'namespace',
         'type', 'struct', 'class', 'interface', 'enum', 'typeParameter', 'function',
-        'method', 'macro', 'variable', 'parameter', 'property', 'label'
+        'method', 'macro', 'variable', 'parameter', 'property', 'label', 'enumMember',
+        'event'
     ];
     tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
 
     const tokenModifiersLegend = [
         'declaration', 'documentation', 'readonly', 'static', 'abstract', 'deprecated',
-        'modification', 'async'
+        'modification', 'async', 'definition', 'defaultLibrary'
     ];
     tokenModifiersLegend.forEach((tokenModifier, index) => tokenModifiers.set(tokenModifier, index));
 
@@ -29,14 +26,15 @@ interface IParsedToken {
     startCharacter: number;
     length: number;
     tokenType: number;
+    tokenModifiers: number;
 }
 
 class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
     async provideDocumentSemanticTokens(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.SemanticTokens> {
-        const allTokens = this._parseText(document.getText());
+        const allTokens = this._parseText(document);
         const builder = new vscode.SemanticTokensBuilder();
         allTokens.forEach((token) => {
-            builder.push(token.line, token.startCharacter, token.length, token.tokenType, 0);
+            builder.push(token.line, token.startCharacter, token.length, token.tokenType, token.tokenModifiers);
         });
         return builder.build();
     }
@@ -44,6 +42,13 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
     private _encodeTokenType(tokenType: string): number {
         if (tokenTypes.has(tokenType)) {
             return tokenTypes.get(tokenType)!;
+        }
+        return 0;
+    }
+
+    private _encodeTokenModifier(tokenModifier: string): number {
+        if (tokenModifiers.has(tokenModifier)) {
+            return 1 << tokenModifiers.get(tokenModifier)!;
         }
         return 0;
     }
@@ -59,11 +64,13 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
         return result;
     }
 
-    private _parseText(text: string): IParsedToken[] {
+    private _parseText(doc: vscode.TextDocument): IParsedToken[] {
+        const highlight: boolean = !!(vscode.workspace.getConfiguration().get('vslab.localization.semanticHighlight'));
         const r: IParsedToken[] = [];
-        const lines = text.split(/\r\n|\r|\n/);
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
+        for (let i = 0; i < doc.lineCount; i++) {
+            if (doc.lineAt(i).isEmptyOrWhitespace)
+                continue;
+            const line = doc.lineAt(i).text;
             const index = line.indexOf('=');
             if (index === -1)
                 continue;
@@ -71,42 +78,103 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
                 line: i,
                 startCharacter: 0,
                 length: index,
-                tokenType: this._encodeTokenType('keyword'),
+                tokenType: this._encodeTokenType('macro'),
+                tokenModifiers: 0,
             });
-            r.push({
-                line: i,
-                startCharacter: index + 1,
-                length: line.length - (index + 1),
-                tokenType: this._encodeTokenType('string'),
-            });
+
+            let start: number = index + 1;
+            if (highlight) {
+                let open: boolean = false;
+                let openPos: number = index + 1;
+                for (let pos: number = index + 1; pos < line.length;) {
+                    if (!open && (line.charAt(pos) == '\\') && (pos < line.length - 1)) {
+                        if (line.charAt(pos + 1) == 'n') {
+                            if (pos > start) {
+                                r.push({
+                                    line: i,
+                                    startCharacter: start,
+                                    length: pos - start,
+                                    tokenType: this._encodeTokenType('string'),
+                                    tokenModifiers: 0
+                                });
+                            }
+                            r.push({
+                                line: i,
+                                startCharacter: pos,
+                                length: 2,
+                                tokenType: this._encodeTokenType('property'),
+                                tokenModifiers: 0
+                            });
+                            pos += 2;
+                            start = pos;
+                            continue;
+                        }
+                    }
+                    else if (open && (line.charAt(pos) == '}')) {
+                        if (openPos > start) {
+                            r.push({
+                                line: i,
+                                startCharacter: start,
+                                length: openPos - start,
+                                tokenType: this._encodeTokenType('string'),
+                                tokenModifiers: 0
+                            });
+                        }
+                        r.push({
+                            line: i,
+                            startCharacter: openPos,
+                            length: pos - openPos + 1,
+                            tokenType: this._encodeTokenType('number'),
+                            tokenModifiers: 0
+                        });
+                        open = false;
+                        pos++;
+                        start = pos;
+                        continue;
+                    }
+                    else if (!open && (line.charAt(pos) == '{')) {
+                        open = true;
+                        openPos = pos;
+                    }
+                    pos++;
+                }
+            }
+            if (start < line.length - 1) {
+                r.push({
+                    line: i,
+                    startCharacter: start,
+                    length: line.length - start,
+                    tokenType: this._encodeTokenType('string'),
+                    tokenModifiers: 0
+                });
+            }
         }
         return r;
     }
 }
 
-export function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
+function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
     let tbl: { [key: string]: string; } = {};
     let breakLineNo = -1;
     let err = false;
     for (let i = 0; i < doc.lineCount; ++i) {
-        let line = doc.lineAt(i);
-        if (line.isEmptyOrWhitespace)
+        if (doc.lineAt(i).isEmptyOrWhitespace)
             continue;
-        let str = line.text;
-        if (str.startsWith('!!!')) {
+        const line = doc.lineAt(i).text;
+        if (line.startsWith('!!!')) {
             breakLineNo = i;
             break;
         }
 
-        let idx = str.indexOf('=');
+        let idx = line.indexOf('=');
         if (idx < 0) {
             breakLineNo = i;
             err = true;
             break;
         }
 
-        let key = str.substr(0, idx).trim();
-        let value = str.substr(idx + 1);
+        let key = line.substr(0, idx).trim();
+        let value = line.substr(idx + 1);
         tbl[key] = value;
     }
 
@@ -174,5 +242,14 @@ export function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
 }
 
 export function onActivate(context: vscode.ExtensionContext) {
+    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(doc => {
+        if (doc.isUntitled)
+            return;
+        const fileName = doc.fileName.replace(/\\/gm, '/');
+        if (fileName.includes('Assets/Res/Config/Language_')) {
+            onDidSaveLanguage(doc, fileName);
+        }
+    }));
+
     context.subscriptions.push(vscode.languages.registerDocumentSemanticTokensProvider({ language: 'localizationConfig' }, new DocumentSemanticTokensProvider(), legend));
 }
