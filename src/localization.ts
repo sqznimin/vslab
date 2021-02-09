@@ -21,21 +21,10 @@ const legend = (function () {
     return new vscode.SemanticTokensLegend(tokenTypesLegend, tokenModifiersLegend);
 })();
 
-interface IParsedToken {
-    line: number;
-    startCharacter: number;
-    length: number;
-    tokenType: number;
-    tokenModifiers: number;
-}
-
 class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
     async provideDocumentSemanticTokens(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.SemanticTokens> {
-        const allTokens = this._parseText(document);
         const builder = new vscode.SemanticTokensBuilder();
-        allTokens.forEach((token) => {
-            builder.push(token.line, token.startCharacter, token.length, token.tokenType, token.tokenModifiers);
-        });
+        this._parseText(document, builder);
         return builder.build();
     }
 
@@ -64,23 +53,22 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
         return result;
     }
 
-    private _parseText(doc: vscode.TextDocument): IParsedToken[] {
+    private _parseText(doc: vscode.TextDocument, builder: vscode.SemanticTokensBuilder): void {
         const highlight: boolean = !!(vscode.workspace.getConfiguration().get('vslab.localization.semanticHighlight'));
-        const r: IParsedToken[] = [];
         for (let i = 0; i < doc.lineCount; i++) {
             if (doc.lineAt(i).isEmptyOrWhitespace)
                 continue;
             const line = doc.lineAt(i).text;
+
+            if (line.startsWith('!!!')) {
+                builder.push(i, 0, line.length, this._encodeTokenType('comment'));
+                continue;
+            }
+
             const index = line.indexOf('=');
             if (index === -1)
                 continue;
-            r.push({
-                line: i,
-                startCharacter: 0,
-                length: index,
-                tokenType: this._encodeTokenType('macro'),
-                tokenModifiers: 0,
-            });
+            builder.push(i, 0, index, this._encodeTokenType('macro'));
 
             let start: number = index + 1;
             if (highlight) {
@@ -90,21 +78,9 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
                     if (!open && (line.charAt(pos) == '\\') && (pos < line.length - 1)) {
                         if (line.charAt(pos + 1) == 'n') {
                             if (pos > start) {
-                                r.push({
-                                    line: i,
-                                    startCharacter: start,
-                                    length: pos - start,
-                                    tokenType: this._encodeTokenType('string'),
-                                    tokenModifiers: 0
-                                });
+                                builder.push(i, start, pos - start, this._encodeTokenType('string'));
                             }
-                            r.push({
-                                line: i,
-                                startCharacter: pos,
-                                length: 2,
-                                tokenType: this._encodeTokenType('property'),
-                                tokenModifiers: 0
-                            });
+                            builder.push(i, pos, 2, this._encodeTokenType('property'));
                             pos += 2;
                             start = pos;
                             continue;
@@ -112,21 +88,9 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
                     }
                     else if (open && (line.charAt(pos) == '}')) {
                         if (openPos > start) {
-                            r.push({
-                                line: i,
-                                startCharacter: start,
-                                length: openPos - start,
-                                tokenType: this._encodeTokenType('string'),
-                                tokenModifiers: 0
-                            });
+                            builder.push(i, start, openPos - start, this._encodeTokenType('string'));
                         }
-                        r.push({
-                            line: i,
-                            startCharacter: openPos,
-                            length: pos - openPos + 1,
-                            tokenType: this._encodeTokenType('number'),
-                            tokenModifiers: 0
-                        });
+                        builder.push(i, openPos, pos - openPos + 1, this._encodeTokenType('number'));
                         open = false;
                         pos++;
                         start = pos;
@@ -139,17 +103,10 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
                     pos++;
                 }
             }
-            if (start < line.length - 1) {
-                r.push({
-                    line: i,
-                    startCharacter: start,
-                    length: line.length - start,
-                    tokenType: this._encodeTokenType('string'),
-                    tokenModifiers: 0
-                });
+            if (start < line.length) {
+                builder.push(i, start, line.length - start, this._encodeTokenType('string'));
             }
         }
-        return r;
     }
 }
 
