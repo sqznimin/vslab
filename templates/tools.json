@@ -1,0 +1,11 @@
+{
+    "shortcuts": [
+        {
+            "desc": "测试",
+            "uri": "E:/"
+        },
+        {
+            "uri": "E:/test.txt"
+        }
+    ]
+}

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { config } from './config';
 
 const tokenTypes = new Map<string, number>();
 const tokenModifiers = new Map<string, number>();
@@ -54,10 +55,13 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
     }
 
     private _parseText(doc: vscode.TextDocument, builder: vscode.SemanticTokensBuilder): void {
-        const highlight: boolean = !!(vscode.workspace.getConfiguration().get('vslab.localization.semanticHighlight'));
+        const highlight: boolean = !!(config.get('localization.semanticHighlight'));
+
         for (let i = 0; i < doc.lineCount; i++) {
-            if (doc.lineAt(i).isEmptyOrWhitespace)
+            if (doc.lineAt(i).isEmptyOrWhitespace) {
                 continue;
+            }
+
             const line = doc.lineAt(i).text;
 
             if (line.startsWith('!!!')) {
@@ -66,8 +70,10 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
             }
 
             const index = line.indexOf('=');
-            if (index === -1)
+            if (index === -1) {
                 continue;
+            }
+
             builder.push(i, 0, index, this._encodeTokenType('macro'));
 
             let start: number = index + 1;
@@ -75,8 +81,8 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
                 let open: boolean = false;
                 let openPos: number = index + 1;
                 for (let pos: number = index + 1; pos < line.length;) {
-                    if (!open && (line.charAt(pos) == '\\') && (pos < line.length - 1)) {
-                        if (line.charAt(pos + 1) == 'n') {
+                    if (!open && (line.charAt(pos) === '\\') && (pos < line.length - 1)) {
+                        if (line.charAt(pos + 1) === 'n') {
                             if (pos > start) {
                                 builder.push(i, start, pos - start, this._encodeTokenType('string'));
                             }
@@ -86,7 +92,7 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
                             continue;
                         }
                     }
-                    else if (open && (line.charAt(pos) == '}')) {
+                    else if (open && (line.charAt(pos) === '}')) {
                         if (openPos > start) {
                             builder.push(i, start, openPos - start, this._encodeTokenType('string'));
                         }
@@ -96,7 +102,7 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
                         start = pos;
                         continue;
                     }
-                    else if (!open && (line.charAt(pos) == '{')) {
+                    else if (!open && (line.charAt(pos) === '{')) {
                         open = true;
                         openPos = pos;
                     }
@@ -115,8 +121,10 @@ function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
     let breakLineNo = -1;
     let err = false;
     for (let i = 0; i < doc.lineCount; ++i) {
-        if (doc.lineAt(i).isEmptyOrWhitespace)
+        if (doc.lineAt(i).isEmptyOrWhitespace) {
             continue;
+        }
+
         const line = doc.lineAt(i).text;
         if (line.startsWith('!!!')) {
             breakLineNo = i;
@@ -145,16 +153,17 @@ function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
     }
 
     const sorted = Object.keys(tbl).sort();
-    const conf = vscode.workspace.getConfiguration();
 
-    if (conf.get('vslab.localization.formatOnSave')) {
+    if (config.get('localization.formatOnSave')) {
         let fmtStrArr: string[] = [];
 
         let maxLen = -1;
         for (let i in sorted) {
             let k = sorted[i];
-            if (maxLen < k.length)
+            if (maxLen < k.length) {
                 maxLen = k.length;
+            }
+
         }
         for (let i in sorted) {
             let k = sorted[i];
@@ -177,7 +186,7 @@ function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
         });
     }
 
-    if (conf.get('vslab.localization.exportCSOnSave')) {
+    if (config.get('localization.exportCSOnSave')) {
         let csStrArr: string[] = [];
         csStrArr.push('namespace GameLogic.Localization');
         csStrArr.push('{');
@@ -200,8 +209,10 @@ function onDidSaveLanguage(doc: vscode.TextDocument, fileName: string) {
 
 export function onActivate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(doc => {
-        if (doc.isUntitled)
+        if (doc.isUntitled) {
             return;
+        }
+
         const fileName = doc.fileName.replace(/\\/gm, '/');
         if (fileName.includes('Assets/Res/Config/Language_')) {
             onDidSaveLanguage(doc, fileName);

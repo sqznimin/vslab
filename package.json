@@ -43,6 +43,11 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Highlight document content"
+				},
+				"vslab.tools.configPath": {
+					"type": "string",
+					"default": "",
+					"description": "Tools json config path"
 				}
 			}
 		},
@@ -52,6 +57,23 @@
 					"command": "vslab.runUIDuplicateCheck",
 					"group": "runCommand",
 					"when": "explorerResourceIsFolder"
+				}
+			]
+		},
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "vslabTools",
+					"title": "VSLab",
+					"icon": "images/tool-light.svg"
+				}
+			]
+		},
+		"views": {
+			"vslabTools": [
+				{
+					"id": "vslabTools.shortcuts",
+					"name": "快捷方式"
 				}
 			]
 		},

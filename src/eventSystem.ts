@@ -23,8 +23,9 @@ function onDidSaveEventsDefine(doc: vscode.TextDocument, fileName: string) {
     for (let i = 0; i < modules.length; ++i) {
         for (let k in modules[i]) {
             const events = modules[i][k];
-            if ((events?.length ?? 0) == 0)
+            if ((events?.length ?? 0) === 0) {
                 break;
+            }
 
             sb.push('');
             sb.push(`        public static class ${k}`);
@@ -35,11 +36,11 @@ function onDidSaveEventsDefine(doc: vscode.TextDocument, fileName: string) {
                     let targs: string = '';
                     let comment: string = events[j].desc ?? '';
                     let idx = name.indexOf('<');
-                    if (idx != -1) {
+                    if (idx !== -1) {
                         targs = name.substr(idx);
                         name = name.substr(0, idx);
                     }
-                    if (comment != '') {
+                    if (comment !== '') {
                         sb.push('            /// <summary>');
                         sb.push(`            /// ${comment}`);
                         sb.push('            /// </summary>');
@@ -69,11 +70,12 @@ function onDidSaveEventsDefine(doc: vscode.TextDocument, fileName: string) {
 
 export function onActivate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(doc => {
-        if (doc.isUntitled)
+        if (doc.isUntitled) {
             return;
+        }
         const fileName = doc.fileName.replace(/\\/gm, '/');
         if (fileName.includes('event_define')) {
-            onDidSaveEventsDefine(doc, fileName)
+            onDidSaveEventsDefine(doc, fileName);
         }
     }));
 }
