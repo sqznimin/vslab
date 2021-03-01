@@ -1,0 +1,8 @@
+references:
+    root: E:/
+
+shortcuts:
+    - desc: 测试
+      uri: E:/
+
+    - uri: ${root}test.txt

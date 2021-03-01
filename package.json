@@ -3,7 +3,7 @@
 	"displayName": "vslab",
 	"description": "For own Unity3D project",
 	"publisher": "sqz",
-	"version": "0.0.6",
+	"version": "0.1.0",
 	"engines": {
 		"vscode": "^1.52.0"
 	},
@@ -23,6 +23,10 @@
 			{
 				"command": "vslab.runUIDuplicateCheck",
 				"title": "VSLab Check UI Image Duplicate"
+			},
+			{
+				"command": "vslab.shortcuts",
+				"title": "VSLab Shortcuts"
 			}
 		],
 		"configuration": {
@@ -47,7 +51,7 @@
 				"vslab.tools.configPath": {
 					"type": "string",
 					"default": "",
-					"description": "Tools json config path"
+					"description": "Tools config file path"
 				}
 			}
 		},
@@ -73,7 +77,7 @@
 			"vslabTools": [
 				{
 					"id": "vslabTools.shortcuts",
-					"name": "快捷方式"
+					"name": "Shortcuts"
 				}
 			]
 		},

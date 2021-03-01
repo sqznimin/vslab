@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import { config } from './config';
 
@@ -41,8 +42,30 @@ export function onActivate(context: vscode.ExtensionContext) {
             }
         });
 
-        const str = buf.toString();
-        toolsConf = JSON.parse(str);
+        vscode.commands.registerCommand('vslab.shortcuts', () => {
+            if (!shortcutEntries) {
+                return;
+            }
+            const list: string[] = [];
+            for (let e of shortcutEntries) {
+                if (e.label) {
+                    list.push(e.label);
+                }
+            }
+            if (list.length === 0) {
+                return;
+            }
+            vscode.window.showQuickPick(list).then(s => {
+                let e = shortcutEntries.find(x => x.label === s);
+                vscode.commands.executeCommand('vslab.openExternal', e?.uri);
+            });
+        });
+
+        let str = buf.toString();
+        const ref = JSON.parse(JSON.stringify(yaml.load(str)))?.references ?? {};
+        str = str.replace(/\$\{(\w+)\}/g, (s, a) => ref[a] ?? s);
+        const jsonStr = JSON.stringify(yaml.load(str));
+        toolsConf = JSON.parse(jsonStr);
 
         const shortcuts = toolsConf.shortcuts ?? [];
         for (let e of shortcuts) {
@@ -51,12 +74,11 @@ export function onActivate(context: vscode.ExtensionContext) {
             }
             shortcutEntries.push({
                 label: e.desc ?? e.uri,
-                uri: vscode.Uri.file(e.uri ?? "")
+                uri: vscode.Uri.file(e.uri ?? '')
             });
         }
 
         const view = vscode.window.createTreeView('vslabTools.shortcuts', { treeDataProvider: getTreeDataProvider(), showCollapseAll: true });
         context.subscriptions.push(view);
     });
-
 }
