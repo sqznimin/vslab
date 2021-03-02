@@ -1,5 +1,5 @@
 references:
-    root: E:/
+    - root: E:/
 
 shortcuts:
     - desc: 测试

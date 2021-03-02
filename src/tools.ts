@@ -26,59 +26,77 @@ function getTreeDataProvider(): vscode.TreeDataProvider<ShortcutEntry> {
     };
 }
 
-export function onActivate(context: vscode.ExtensionContext) {
-    toolsConf = null;
-    shortcutEntries = [];
-
-    const path = config.get('tools.configPath');
+async function populateShortcuts(entries: ShortcutEntry[], refMap: { [key: string]: string | undefined }, path: string): Promise<void> {
     if (!fs.existsSync(path)) {
         return;
     }
 
-    vscode.workspace.fs.readFile(vscode.Uri.file(path)).then(buf => {
-        vscode.commands.registerCommand('vslab.openExternal', uri => {
-            if (uri) {
-                vscode.env.openExternal(uri);
-            }
-        });
+    let buf = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
+    let str = buf.toString();
+    const refs = JSON.parse(JSON.stringify(yaml.load(str)))?.references ?? [];
 
-        vscode.commands.registerCommand('vslab.shortcuts', () => {
-            if (!shortcutEntries) {
-                return;
-            }
-            const list: string[] = [];
-            for (let e of shortcutEntries) {
-                if (e.label) {
-                    list.push(e.label);
-                }
-            }
-            if (list.length === 0) {
-                return;
-            }
-            vscode.window.showQuickPick(list).then(s => {
-                let e = shortcutEntries.find(x => x.label === s);
-                vscode.commands.executeCommand('vslab.openExternal', e?.uri);
-            });
-        });
-
-        let str = buf.toString();
-        const ref = JSON.parse(JSON.stringify(yaml.load(str)))?.references ?? {};
-        str = str.replace(/\$\{(\w+)\}/g, (s, a) => ref[a] ?? s);
-        const jsonStr = JSON.stringify(yaml.load(str));
-        toolsConf = JSON.parse(jsonStr);
-
-        const shortcuts = toolsConf.shortcuts ?? [];
-        for (let e of shortcuts) {
-            if (!e.uri) {
-                continue;
-            }
-            shortcutEntries.push({
-                label: e.desc ?? e.uri,
-                uri: vscode.Uri.file(e.uri ?? '')
-            });
+    for (let e of refs) {
+        for (let k in e) {
+            let v: string = e[k];
+            v = v.replace(/\$\{(\w+)\}/g, (s, a) => refMap[a] ?? s);
+            refMap[k] = v;
         }
+    }
 
-        const view = vscode.window.createTreeView('vslabTools.shortcuts', { treeDataProvider: getTreeDataProvider(), showCollapseAll: true });
-        context.subscriptions.push(view);
+    str = str.replace(/\$\{(\w+)\}/g, (s, a) => refMap[a] ?? s);
+    const jsonStr = JSON.stringify(yaml.load(str));
+    toolsConf = JSON.parse(jsonStr);
+
+    const shortcuts = toolsConf.shortcuts ?? [];
+    for (let e of shortcuts) {
+        if (!e.uri) {
+            continue;
+        }
+        entries.push({
+            label: e.desc ?? e.uri,
+            uri: vscode.Uri.file(e.uri ?? '')
+        });
+    }
+}
+
+export function onActivate(context: vscode.ExtensionContext) {
+    toolsConf = null;
+    shortcutEntries = [];
+
+    vscode.commands.registerCommand('vslab.openExternal', uri => {
+        if (uri) {
+            vscode.env.openExternal(uri);
+        }
+    });
+
+    vscode.commands.registerCommand('vslab.shortcuts', () => {
+        if (!shortcutEntries) {
+            return;
+        }
+        const list: string[] = [];
+        for (let e of shortcutEntries) {
+            if (e.label) {
+                list.push(e.label);
+            }
+        }
+        if (list.length === 0) {
+            return;
+        }
+        vscode.window.showQuickPick(list).then(s => {
+            let e = shortcutEntries.find(x => x.label === s);
+            vscode.commands.executeCommand('vslab.openExternal', e?.uri);
+        });
+    });
+
+    let path = '';
+    const rootPath = config.rootPath;
+    if (rootPath) {
+        path = rootPath + '/.vscode/vslab_tools.yml';
+    }
+    populateShortcuts(shortcutEntries, { ['ROOT']: rootPath }, path).then(() => {
+        populateShortcuts(shortcutEntries, {}, config.get('tools.configPath')).then(() => {
+            const view = vscode.window.createTreeView('vslabTools.shortcuts', { treeDataProvider: getTreeDataProvider(), showCollapseAll: true });
+            context.subscriptions.push(view);
+        });
     });
 }
