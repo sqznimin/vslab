@@ -3,6 +3,7 @@ import { config } from './config';
 import * as localization from './localization';
 import * as eventSystem from './eventSystem';
 import * as tools from './tools';
+import * as convert from './convert';
 
 let terminal: vscode.Terminal;
 
@@ -34,6 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 	localization.onActivate(context);
 	eventSystem.onActivate(context);
 	tools.onActivate(context);
+	convert.onActivate(context);
 }
 
 export function deactivate() {

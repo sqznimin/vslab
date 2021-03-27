@@ -27,6 +27,14 @@
 			{
 				"command": "vslab.shortcuts",
 				"title": "VSLab Shortcuts"
+			},
+			{
+				"command": "vslab.yaml2json",
+				"title": "VSLab Yaml To Json"
+			},
+			{
+				"command": "vslab.json2yaml",
+				"title": "VSLab Json To Yaml"
 			}
 		],
 		"configuration": {

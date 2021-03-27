@@ -54,7 +54,7 @@ async function populateShortcuts(entries: ShortcutEntry[], refMap: { [key: strin
         }
         entries.push({
             label: e.desc ?? e.uri,
-            uri: vscode.Uri.file(e.uri ?? '')
+            uri: e.uri?.startsWith('http') ? vscode.Uri.parse(e.uri) : vscode.Uri.file(e.uri ?? '')
         });
     }
 }
